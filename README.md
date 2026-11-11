@@ -2,6 +2,8 @@
 
 A ready-made interactive map. It includes address search, a layer list with collapsible groups, a legend that updates as layers are switched on and off, show/hide switches, popups, hover highlights and name labels that fit inside areas. Add your own GeoJSON files and the map builds itself.
 
+> **New to JavaScript, HTML or CSS?** Start with **[LEARNING-GUIDE.md](LEARNING-GUIDE.md)**. Every file is commented in plain language, and words tagged like **[📖 Closure]** are explained in **[GLOSSARY.md](GLOSSARY.md)**.
+
 ## Add a layer in two steps
 
 1. Put the `.geojson` file in the `Data/` folder.

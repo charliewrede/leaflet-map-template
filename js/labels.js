@@ -1,9 +1,10 @@
-// ============================================================================
-// AREA NAME LABELS
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  labels.js: FITS NAME LABELS INSIDE AREAS               (read this 8th)  ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
 //
 // Writes each area's name inside its outline (any layer with a labelField
-// in js/config.js). Every time the map
-// moves, zooms, or a layer is switched on or off, each label is re-fitted:
+// in js/config.js). Every time the map moves, zooms, or a layer is
+// switched on or off, each label is re-fitted:
 //
 //   - it must sit completely inside its own area,
 //   - it must not cover a point on the map (a school, a library, ...),
@@ -13,6 +14,22 @@
 // then one to several lines of text, then a list of nearby positions. The
 // first combination that satisfies all three rules is used. If nothing
 // fits, the name is still shown at the center in small text.
+//
+// GOOD NEWS FOR A C++ PROGRAMMER
+// This file is mostly plain algorithm: nested loops, break/continue, and
+// geometry. It reads almost like C++. Two ideas are new:
+//
+//   TWO KINDS OF COORDINATES
+//     - map coordinates: latitude/longitude [📖 LatLng], fixed on the Earth
+//     - screen pixels: x/y from the top-left of the map box, which change
+//       every time you pan or zoom [📖 Container point]
+//   Label sizes are in pixels, but the area outlines are in lat/lng, so the
+//   code converts back and forth with map.latLngToContainerPoint() and
+//   map.containerPointToLatLng().
+//
+//   LABELS ARE TOOLTIPS
+//   Each label is a Leaflet tooltip [📖 Tooltip] that layers.js attached to
+//   its area, invisible at first. This file moves it and makes it visible.
 //
 // CONTENTS
 //   1. Settings
@@ -24,9 +41,10 @@
 
 // ============================================================================
 // 1. SETTINGS
+// Safe to tweak. Try changing MIN_ZOOM to 12 to see labels earlier.
 // ============================================================================
 
-// Labels are hidden when zoomed out further than this.
+// Labels are hidden when zoomed out further than this [📖 Zoom level].
 const MIN_ZOOM = 13;
 
 // Text size in pixels: starts at 9 at MIN_ZOOM and grows 1.5 per zoom level
@@ -40,6 +58,7 @@ const LABEL_PADDING = 4;
 
 // Positions to try, as [right, down] pixel offsets from the area's
 // center. Starts at the center and gradually moves farther out.
+// An array of two-number arrays [📖 Array], like vector<pair<int,int>>.
 const OFFSETS = [
 
     // Center
@@ -67,6 +86,15 @@ const OFFSETS = [
 // ============================================================================
 
 // Is a point inside one ring of coordinates? (ray-casting test)
+// [📖 Ray casting]
+//
+// Imagine a ray shooting from the point straight to the right. Count how
+// many edges of the shape it crosses: odd = inside, even = outside. Each
+// crossing flips "inside". This is the standard textbook algorithm; the C++
+// version would look nearly identical.
+//
+// "ring" is a list of [longitude, latitude] corners [📖 GeoJSON]. Note:
+// GeoJSON puts longitude FIRST, which is why x = lng and y = lat here.
 function pointInRing(point, ring) {
 
     const x = point.lng;
@@ -74,6 +102,9 @@ function pointInRing(point, ring) {
 
     let inside = false;
 
+    // A classic C-style for loop, the same as C++. "j" trails one step behind
+    // "i", so each pass looks at one edge, from corner j to corner i.
+    // (j = i++ sets j to the old i, then increases i.)
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
 
         const xi = ring[i][0];
@@ -81,6 +112,8 @@ function pointInRing(point, ring) {
         const xj = ring[j][0];
         const yj = ring[j][1];
 
+        // Does the rightward ray cross the edge from j to i?
+        // "|| 0.0000001" avoids dividing by zero on a flat edge.
         const intersects =
             ((yi > y) !== (yj > y)) &&
             (x < (xj - xi) * (y - yi) / ((yj - yi) || 0.0000001) + xi);
@@ -95,6 +128,7 @@ function pointInRing(point, ring) {
 
 // Is a point inside one polygon?
 // In GeoJSON, ring 0 is the outer boundary and any further rings are holes.
+// (Think of a donut: one outer ring, one hole.)
 function pointInPolygon(point, rings) {
 
     if (!rings || rings.length === 0) {
@@ -120,6 +154,9 @@ function pointInPolygon(point, rings) {
 //
 // Nine points of the box are tested: the center, the four corners and the
 // four edge midpoints. That makes it hard for text to cross the boundary.
+//
+//   box      the label's rectangle in screen pixels: { left, right, top, bottom }
+//   feature  the area's GeoJSON feature (its outline is in lat/lng)
 function labelFitsInsideArea(map, box, feature) {
 
     if (!feature || !feature.geometry) {
@@ -132,6 +169,9 @@ function labelFitsInsideArea(map, box, feature) {
     const middleY = (box.top + box.bottom) / 2;
 
     // The nine test points, converted from screen pixels to map coordinates
+    // [📖 Container point] [📖 LatLng].
+    // .map(([x, y]) => ...) unpacks each [x, y] pair [📖 Destructuring] and
+    // converts it.
     const testPoints = [
         [middleX, middleY],
         [box.left, box.top],
@@ -144,6 +184,9 @@ function labelFitsInsideArea(map, box, feature) {
         [box.right, middleY]
     ].map(([x, y]) => map.containerPointToLatLng(L.point(x, y)));
 
+    // .every = "do ALL items pass the test?" (like std::all_of).
+    // .some  = "does AT LEAST ONE pass?"      (like std::any_of).
+    // [📖 Array methods]
     const allInside = rings =>
         testPoints.every(point => pointInPolygon(point, rings));
 
@@ -151,7 +194,7 @@ function labelFitsInsideArea(map, box, feature) {
         return allInside(geometry.coordinates);
     }
 
-    // A area made of several pieces: all nine points must fit
+    // An area made of several pieces: all nine points must fit
     // inside the SAME piece.
     if (geometry.type === "MultiPolygon") {
         return geometry.coordinates.some(allInside);
@@ -169,8 +212,12 @@ function labelFitsInsideArea(map, box, feature) {
 //
 //   "Central Park"       -> one line, then one word per line
 //   "North Capitol Hill" -> one line, two lines, three lines, ...
+//
+// "<br>" is the HTML line break [📖 Tag].
 function createLabelLayouts(text) {
 
+    // Split on any run of spaces [📖 Regular expression]: \s+ = "one or more
+    // whitespace characters". Gives an array of words.
     const words = text.trim().split(/\s+/);
     const layouts = [];
 
@@ -180,7 +227,11 @@ function createLabelLayouts(text) {
     // OPTION 2: split roughly in half
     if (words.length >= 2) {
 
+        // Math.ceil rounds UP, like std::ceil.
         const middle = Math.ceil(words.length / 2);
+
+        // .slice(a, b) copies items a up to (not including) b. .join(" ")
+        // glues them back into one string with spaces.
         const firstHalf = words.slice(0, middle).join(" ");
         const secondHalf = words.slice(middle).join(" ");
 
@@ -217,6 +268,7 @@ function createLabelLayouts(text) {
 
 // Writes text into a label at a given size.
 // (Bold, centering and line spacing come from css/styles.css, section 8.)
+// [📖 Inline style] [📖 innerHTML]
 function setLabelText(element, html, fontSize) {
     element.style.fontSize = fontSize + "px";
     element.innerHTML = "<strong>" + html + "</strong>";
@@ -225,11 +277,13 @@ function setLabelText(element, html, fontSize) {
 // Starts the labelling.
 //
 //   map             the Leaflet map
-//   areas   the area layer (its tooltips are the labels)
+//   areas           the area layer (its tooltips are the labels)
 //   layers          every layer on the map; labels avoid their points
 //   labelField      the property that holds each area's name
 //
 // Returns the update function so it can also be run on demand.
+// The three inner functions below can all see map, areas, layers and
+// labelField [📖 Closure].
 export function setUpAreaLabels(map, areas, layers, labelField) {
 
     // Screen positions of every point currently shown on the map.
@@ -237,12 +291,16 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
 
         const points = [];
 
+        // Object.values(layers) = every layer, without the ids.
         Object.values(layers).forEach(layerGroup => {
 
+            // Skip layers that are switched off.
             if (!map.hasLayer(layerGroup)) {
                 return;
             }
 
+            // Only points have getLatLng (areas and lines don't), so this
+            // collects just the points [📖 Dynamic typing].
             layerGroup.eachLayer(layer => {
                 if (layer.getLatLng) {
                     points.push(map.latLngToContainerPoint(layer.getLatLng()));
@@ -269,6 +327,7 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
 
         const zoom = map.getZoom();
 
+        // Too far out, or the area layer is switched off: hide everything.
         if (zoom < MIN_ZOOM || !map.hasLayer(areas)) {
             hideAllLabels();
             return;
@@ -289,12 +348,15 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
 
             const tooltip = layer.getTooltip();
 
+            // Inside a forEach-style loop, "return" moves on to the next
+            // area, like "continue" in C++.
             if (!tooltip) {
                 return;
             }
 
             layer.openTooltip();
 
+            // The tooltip's actual box on the page [📖 Element].
             const element = tooltip.getElement();
 
             const name =
@@ -315,6 +377,8 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
                 return;
             }
 
+            // The middle of the area's bounding rectangle [📖 Bounds], in
+            // map coordinates, then in screen pixels.
             const center = layer.getBounds().getCenter();
             const centerPoint = map.latLngToContainerPoint(center);
 
@@ -327,6 +391,9 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
 
                 // ---- Try each way of breaking the name into lines ----------
 
+                // "for (const x of list)" is JavaScript's range-based for
+                // loop, the same as C++'s  for (const auto& x : list)
+                // [📖 for...of].
                 for (const layout of layouts) {
 
                     setLabelText(element, layout, fontSize);
@@ -337,6 +404,9 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
 
                     // ---- Try each position ---------------------------------
 
+                    // Each offset is a [x, y] pair, unpacked straight into two
+                    // variables [📖 Destructuring], like C++17's
+                    //     for (auto [offsetX, offsetY] : OFFSETS)
                     for (const [offsetX, offsetY] of OFFSETS) {
 
                         const x = centerPoint.x + offsetX;
@@ -350,6 +420,7 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
                         };
 
                         // RULE 1: must fit inside the area
+                        // "continue" skips to the next position, as in C++.
                         if (!labelFitsInsideArea(map, box, layer.feature)) {
                             continue;
                         }
@@ -367,6 +438,9 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
                         }
 
                         // RULE 3: must not overlap another label
+                        // (Two boxes DON'T overlap if one is entirely to the
+                        // left, right, above or below the other. The "!"
+                        // flips that into "they DO overlap".)
                         const overlapsLabel = occupiedBoxes.some(other =>
                             !(
                                 box.right + LABEL_PADDING < other.left ||
@@ -389,6 +463,8 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
                         break;
                     }
 
+                    // "break" only leaves the innermost loop, so we check
+                    // again to leave this one too.
                     if (placed) {
                         break;
                     }
@@ -418,6 +494,8 @@ export function setUpAreaLabels(map, areas, layers, labelField) {
     }
 
     // Re-fit the labels shortly after the map changes
+    // One listener for four events, separated by spaces [📖 Event listener].
+    // The 50 ms wait lets the map finish redrawing first [📖 Callback].
     map.on("zoomend moveend overlayadd overlayremove", function () {
         setTimeout(updateAreaLabels, 50);
     });

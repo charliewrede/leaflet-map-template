@@ -1,11 +1,44 @@
-// ============================================================================
-// MAP CONFIGURATION
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  config.js: YOUR MAP'S SETTINGS                         (read this 2nd)  ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
 //
 // Everything specific to YOUR map lives in this file. The other files in js/
 // are the "engine": they read this file and build the map from it, and you
 // should not need to change them.
 //
+// This file contains almost no logic. It's mostly DATA: lists and settings.
+// That makes it the perfect first JavaScript file to read. If you can read
+// this one, you know the building blocks every other file uses.
+//
 // ----------------------------------------------------------------------------
+// JAVASCRIPT CRASH COURSE (using this file as the example)
+//
+//   // a comment              Same as C++. /* ... */ also works.
+//
+//   const NAME = value;       A variable that can't be reassigned, like
+//                             `const auto` in C++. [📖 const and let]
+//                             JavaScript has no type names: the type comes
+//                             from the value. [📖 Dynamic typing]
+//
+//   "text"                    A string. 'text' (single quotes) is the same.
+//
+//   [a, b, c]                 An ARRAY: an ordered list, like std::vector,
+//                             but it can mix types. [📖 Array]
+//
+//   { key: value, ... }       An OBJECT: a bundle of named values, like a
+//                             C++ struct you can create on the spot.
+//                             Read a value with  obj.key  [📖 Object]
+//
+//   null                      "Deliberately nothing", similar to nullptr.
+//                             [📖 null and undefined]
+//
+//   export                    Lets other files import this value.
+//                             [📖 Module]
+//
+// You'll see the 📖 tags all through the code. Each one is a word explained
+// in GLOSSARY.md (in the project's main folder).
+// ----------------------------------------------------------------------------
+//
 // QUICK START: ADD A LAYER IN TWO STEPS
 //
 //   1. Put the .geojson file in the Data folder.
@@ -35,6 +68,11 @@
 //   9. Advanced ............ drawing order (panes)
 // ============================================================================
 
+// IMPORT: borrow these helper functions from popups.js so the POPUPS section
+// below can use them. Like #include, except you name exactly which pieces you
+// want. [📖 Module]
+// (Some of these aren't used yet. They're imported so they're ready when you
+// write your own popups.)
 import {
     field,
     address,
@@ -53,26 +91,44 @@ import {
 // 1. MAP SETTINGS
 // ============================================================================
 
+// The folder the data files live in. "export" makes it visible to the files
+// that import it (layers.js does). [📖 Module]
 export const DATA_FOLDER = "Data/";
 
+// MAP is an OBJECT [📖 Object]: several named settings bundled together.
+// Other files read them with a dot, e.g.  MAP.zoom  or  MAP.basemap.url
+// In C++ terms it's like an instance of a struct with these fields:
+//     struct MapSettings { std::string title; double center[2]; int zoom; ... };
 export const MAP = {
 
     // Shown in the browser tab.
     title: "My Map",
 
     // Where the map starts before the data has loaded: [latitude, longitude].
+    // An ARRAY [📖 Array] of two numbers. Here: downtown Denver.
+    // (Find any place's numbers by right-clicking it in Google Maps.)
     center: [39.7392, -104.9903],
+
+    // Zoom level [📖 Zoom level]: 1 shows the whole world, 18 shows single houses.
     zoom: 11,
 
     // Once loaded, the map zooms to fit this layer (use its id).
-    // Leave it as null to fit everything that is switched on.
+    // Leave it as null [📖 null and undefined] to fit everything that is
+    // switched on.
     fitToLayer: null,
 
+    // The background map pictures [📖 Basemap]. An object INSIDE an object.
+    // {s}, {z}, {x}, {y} are blanks that Leaflet fills in for every tile
+    // [📖 Tile] it downloads.
     basemap: {
         url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+        // The credit line in the bottom-right corner. "&copy;" is HTML code
+        // for the © symbol [📖 HTML entity].
         attribution: "&copy; OpenStreetMap contributors"
     },
 
+    // Popups [📖 Popup] never get wider than this many pixels.
     popupMaxWidth: 350
 };
 
@@ -80,17 +136,25 @@ export const MAP = {
 // ============================================================================
 // 2. ADDRESS SEARCH
 //
-// Uses Geoapify (free key at https://myprojects.geoapify.com).
+// Uses Geoapify (free key at https://myprojects.geoapify.com), a geocoding
+// service [📖 Geocoding]: you send it text like "1600 Pennsylvania Ave", and
+// it sends back matching addresses with their coordinates.
+//
 // Set apiKey to "" to remove the search box.
 // ============================================================================
 
 export const SEARCH = {
 
+    // Your password-like ID for Geoapify [📖 API key]. Anyone can see it in
+    // a public website's code, so in the Geoapify dashboard, limit it to your
+    // website's address.
     apiKey: "b6a94e57cd704f0183f26b5b58ad5d78",
 
+    // The grey hint text shown in the empty search box.
     placeholder: "Search address...",
 
     // Only addresses inside this box are offered: [south, west], [north, east].
+    // An array of two arrays: the box's bottom-left and top-right corners.
     // Set to null to allow any address. Results are always nudged toward
     // MAP.center.
     bounds: [
@@ -100,9 +164,12 @@ export const SEARCH = {
 
     outsideBoundsMessage: "Please select an address inside the map area.",
 
+    // How many suggestions to show at most.
     maxResults: 6,
 
     // Wait this long after the last keystroke before searching (milliseconds).
+    // Waiting avoids sending a request for every single letter typed.
+    // [📖 Debounce]
     typingDelay: 250,
 
     // Zoom level used when jumping to a chosen address.
@@ -117,6 +184,16 @@ export const SEARCH = {
 // which color each feature by a 0-1 number in one of its properties.
 // A score takes the color of the first step whose "above" value it exceeds,
 // checking from the top down.
+//
+// Example: a score of 0.65 isn't above 0.8, but IS above 0.6, so it gets
+// "#F53D00" (Moderate - High).
+//
+// This is an ARRAY of OBJECTS [📖 Array] [📖 Object], like a
+// std::vector<Step> where Step is a struct { double above; string color;
+// string label; }.
+//
+// Colors are written as hex codes [📖 Hex color]: "#RRGGBB", where each pair
+// is how much red, green and blue (00 = none, FF = full).
 // ============================================================================
 
 export const SCORE_SCALE = [
@@ -142,10 +219,13 @@ export const TOP_SCORES = {
 // ============================================================================
 // 4. POPUPS (optional)
 //
+// A popup [📖 Popup] is the little window that opens when you click
+// something on the map.
+//
 // A layer WITHOUT a popup setting gets an automatic popup listing all of its
-// properties. Write one here only when you want nicer labels, fewer rows, or
-// formatted numbers. Each popup is a list of rows, shown top to bottom; a
-// row is skipped when the feature has no value for it.
+// properties [📖 GeoJSON]. Write one here only when you want nicer labels,
+// fewer rows, or formatted numbers. Each popup is a list of rows, shown top
+// to bottom; a row is skipped when the feature has no value for it.
 //
 //   field("Label", "PROPERTY")                       Label: value
 //   field("Size", "ACRES", { format: decimals(1),    Size: 12.3 acres
@@ -153,15 +233,31 @@ export const TOP_SCORES = {
 //   address(["STREET", "CITY", "STATE", "ZIP"])      Address: 1 Main St, ...
 //   link("WEBSITE", "Visit website")                 Website: Visit website
 //
+// field(), address() and link() are FUNCTIONS imported from popups.js. They
+// don't build anything yet. They just return a small object describing the
+// row, and popups.js turns those descriptions into text later.
+//
 // Formatters: decimals(n), percent, shareAsPercent, thousands, titleCase,
 // replaceValues({...}), ensureHttps. See js/popups.js for details.
+//
+// HOW TO FIND PROPERTY NAMES: open your .geojson file in VS Code and look
+// inside any "properties": { ... } block, or drag the file onto geojson.io.
 // ============================================================================
 
 export const POPUPS = {
 
+    // One popup design named "examplePlace". It's used by the
+    // "Example Places" layer below as  popup: POPUPS.examplePlace
     examplePlace: [
         field("Place", "name"),
         field("Category", "category"),
+
+        // The third argument is an object of extra options:
+        //   show: "defined"   -> show the row even when the value is 0
+        //   format: thousands -> 1200000 becomes "1,200,000"
+        // Note: "thousands" is passed WITHOUT () because we're handing over
+        // the function itself for popups.js to call later
+        // [📖 Function as a value].
         field("Visitors per Year", "visitors", { show: "defined", format: thousands })
     ]
 };
@@ -169,6 +265,10 @@ export const POPUPS = {
 
 // ============================================================================
 // 5. LAYERS
+//
+// A layer [📖 Layer] is one set of things drawn on the map, usually one
+// GeoJSON file, e.g. "all the parks". Each one gets a checkbox in the layer
+// list.
 //
 // One entry per layer. Only "file" is required. Layers listed here appear
 // in this order in the layer list and the legend.
@@ -205,6 +305,15 @@ export const POPUPS = {
 //   legendLineWidth line thickness in the legend (outline type)
 //   hover           false = no highlight when the mouse is over it
 //   pane            drawing layer from section 9 (default: by type)
+//
+// WHY YOU CAN LEAVE SETTINGS OUT: in JavaScript, reading a key an object
+// doesn't have gives "undefined" instead of an error [📖 null and undefined].
+// layers.js checks for that and fills in a default.
+//
+// Watch the commas: every entry in a list needs a comma after it (a trailing
+// comma after the last one is fine). A missing comma is the #1 reason a map
+// suddenly shows nothing. Open the browser console to see the error
+// [📖 Console].
 // ============================================================================
 
 export const LAYERS = [
@@ -249,6 +358,8 @@ export const LAYERS = [
 // A layer joins a group with its "group" setting. The group's name in the
 // layer list is the group setting itself, unless you give it a different
 // display name here:   { foodAccess: "Food Access" }
+//
+// {} is an empty object: no renames yet.
 // ============================================================================
 
 export const GROUPS = {};
@@ -256,6 +367,9 @@ export const GROUPS = {};
 
 // ============================================================================
 // 7. LAYER CONTROL ORDER (optional)
+//
+// The "layer control" [📖 Control] is the checkbox list in the top-left
+// corner.
 //
 // null = same order as LAYERS, with each group placed where its first layer
 // appears. To arrange it yourself, list layer ids and { group: ... } entries:
@@ -283,6 +397,7 @@ export const LAYER_CONTROL_ORDER = null;
 //     ]
 // ============================================================================
 
+// The heading of the automatic legend.
 export const LEGEND_TITLE = "Map Layers";
 
 export const LEGEND = null;
@@ -291,8 +406,15 @@ export const LEGEND = null;
 // ============================================================================
 // 9. ADVANCED: DRAWING ORDER (PANES)
 //
-// A higher zIndex is drawn on top. Each layer type has a default pane (see
-// js/layers.js); set a layer's "pane" to move it.
+// A pane [📖 Pane] is a see-through sheet that layers are drawn on. The
+// sheets are stacked, and a higher zIndex [📖 z-index] is drawn on top.
+// That's why points always sit above areas, and popups above everything.
+//
+// Each layer type has a default pane (see DEFAULT_PANES in js/layers.js);
+// set a layer's "pane" to move it.
+//
+// clickThrough: true means mouse clicks pass straight through this sheet to
+// whatever is underneath. The labels use it so they never block a click.
 // ============================================================================
 
 export const PANES = [

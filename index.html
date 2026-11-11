@@ -1,11 +1,39 @@
 <!DOCTYPE html>
-<html>
-
 <!--
-    LEAFLET MAP TEMPLATE
+    ╔════════════════════════════════════════════════════════════════════╗
+    ║  index.html: THE PAGE FRAME                     (read this 1st)    ║
+    ╚════════════════════════════════════════════════════════════════════╝
 
-    This page is only the frame. The map itself is built by the files below:
+    WHAT IS THIS FILE?
+    This is the file the browser opens first. It's written in HTML
+    [📖 HTML], which describes WHAT is on a page (a heading, a box, a
+    button), not how it looks (that's CSS [📖 CSS]) or how it behaves (that's
+    JavaScript [📖 JavaScript]).
 
+    Our page is almost empty on purpose. It contains just ONE box, the
+    <div id="map"> further down, and a list of files to load. The JavaScript
+    files then fill that box with the whole map.
+
+    Think of it like main() in C++: it doesn't do the work itself, it pulls
+    in the "libraries" (#include) and starts the program.
+
+    HOW TO READ HTML
+    HTML is made of tags [📖 Tag] written in angle brackets. Most come in
+    pairs that wrap content:
+
+        <title>My Map</title>
+        ^opening tag   ^closing tag (note the slash)
+
+    Some tags stand alone, like <meta ...> or <link ...>. Extra settings
+    inside a tag are called attributes [📖 Attribute], e.g. id="map".
+
+    This whole block you're reading is an HTML comment. It starts with the
+    four characters  less-than, !, -, -  and ends with  -, -, greater-than.
+    The browser ignores everything in between, like /* ... */ in C++. (They
+    can't be typed literally here, because writing the end marker would end
+    this comment early!)
+
+    WHERE THE FILES FIT
         css/styles.css ..... how everything looks
         js/config.js ....... what is on the map: layers, colors, popups, legend
         js/main.js ......... the starting point; builds the map step by step
@@ -15,7 +43,7 @@
         js/controls.js ..... layer checkbox list and show / hide switches
         js/legend.js ....... the legend
         js/search.js ....... the address search box
-        Data/ .............. the GeoJSON files
+        Data/ .............. the GeoJSON files [📖 GeoJSON]
 
     TO ADD DATA: put a .geojson file in Data/ and add
         { file: "YourFile.geojson" },
@@ -23,34 +51,77 @@
 
     To change WHAT the map shows, edit js/config.js.
     To change HOW it looks, edit css/styles.css.
+    New to all this? Start with LEARNING-GUIDE.md and keep GLOSSARY.md open.
 
-    The page must be opened through a web server (for example the VS Code
-    "Live Server" extension or GitHub Pages), not by double-clicking the file.
+    The page must be opened through a web server [📖 Web server] (for
+    example the VS Code "Live Server" extension or GitHub Pages), not by
+    double-clicking the file.
 -->
+<html>
 
+<!--
+    <head> holds information ABOUT the page that isn't shown inside it:
+    the tab title, and which style files to load. Think of it as the
+    #include section at the top of a C++ file.
+-->
 <head>
+    <!-- Text encoding, so characters like "−" and "é" display correctly -->
     <meta charset="utf-8">
+
+    <!-- Makes the page fit phone screens instead of showing a tiny desktop page -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Text in the browser tab. (js/main.js replaces it with MAP.title from config.js.) -->
     <title>My Map</title>
 
-    <!-- Leaflet (the map library) and the tree-style layer control -->
+    <!--
+        <link rel="stylesheet"> loads a CSS file [📖 CSS].
+        These first two come from the internet (a CDN [📖 CDN]): the
+        Leaflet [📖 Leaflet] map library's own styles, and the styles for the
+        tree-style layer list plugin.
+    -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.control.layers.tree@1.2.0/L.Control.Layers.Tree.css" />
 
-    <!-- This map's own styles -->
+    <!--
+        This map's own styles. It's loaded LAST on purpose: when two CSS
+        rules disagree, the later one usually wins [📖 Cascade], so our
+        styles can override Leaflet's defaults.
+    -->
     <link rel="stylesheet" href="css/styles.css" />
 </head>
 
+<!-- <body> holds everything that is actually shown on the page. -->
 <body>
 
-    <!-- Leaflet draws the map inside this element -->
+    <!--
+        THE MAP BOX. A <div> [📖 div] is a plain, empty box.
+        id="map" gives it a unique name [📖 id] so code can find it:
+            - css/styles.css stretches it over the whole screen (#map { ... })
+            - js/main.js tells Leaflet to draw inside it: L.map("map")
+    -->
     <div id="map"></div>
 
-    <!-- Leaflet (the map library) and the tree-style layer control -->
+    <!--
+        <script> loads a JavaScript file [📖 JavaScript].
+        Scripts load in order, top to bottom, so the libraries must come
+        before our own code that uses them.
+
+        1. Leaflet itself. It creates a global object called "L" that holds
+           every Leaflet tool: L.map, L.marker, L.geoJSON, ...
+           [📖 Global variable]
+        2. A plugin that adds the collapsible "tree" layer list.
+    -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.control.layers.tree@1.2.0/L.Control.Layers.Tree.js"></script>
 
-    <!-- This map's own code. main.js loads the other js files itself. -->
+    <!--
+        3. OUR code. type="module" turns on JavaScript modules [📖 Module],
+           which let one file "import" from another (like #include).
+           We only load main.js here; it imports the other js files itself.
+           Modules are also why the page needs a web server: browsers refuse
+           to load modules from a file opened by double-clicking.
+    -->
     <script type="module" src="js/main.js"></script>
 
 </body>

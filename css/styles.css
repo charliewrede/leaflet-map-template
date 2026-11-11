@@ -1,5 +1,43 @@
-/* ==========================================================================
-   MAP STYLES
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║  styles.css: HOW EVERYTHING LOOKS                      (read this 10th)  ║
+   ╚══════════════════════════════════════════════════════════════════════════╝
+
+   WHAT IS CSS? [📖 CSS]
+   HTML says WHAT is on the page; CSS says how it LOOKS: colors, sizes,
+   spacing, shadows, rounded corners. It isn't a programming language: no
+   variables to compute with, no loops. It's a list of RULES.
+
+   HOW TO READ ONE RULE
+
+       .legend-section {            <- SELECTOR [📖 Selector]: WHICH elements
+           font-size: 12px;         <- PROPERTY: VALUE;   [📖 Property (CSS)]
+           color: gray;             <- another one
+       }
+
+   In words: "every element with the class legend-section gets 12-pixel,
+   gray text." Selector shapes you'll see in this file:
+
+       #map               the element with id="map"           [📖 id]
+       .legend            elements with class="legend"        [📖 Class (CSS)]
+       .info.legend       elements with BOTH classes
+       .legend i          <i> tags somewhere INSIDE a .legend
+       a, b, c            the same rule for a AND b AND c
+       x:hover            x while the mouse is over it        [📖 Pseudo-class]
+       x::before          an extra decorative piece of x      [📖 Pseudo-element]
+
+   Classes that start with "leaflet-" belong to the Leaflet library. We
+   restyle them here to give Leaflet's built-in boxes our look.
+
+   WHO WINS WHEN RULES DISAGREE? [📖 Cascade]
+   The more specific selector wins; if equal, the one written later wins.
+   "!important" [📖 !important] beats both, and is used here to override
+   Leaflet's own styles.
+
+   This is a comment, by the way: CSS only has the /* ... *\/ kind.
+
+   TRY THIS: right-click anything on the map > "Inspect". The browser shows
+   which rules from this file apply to it, and you can edit values live to
+   experiment (nothing is saved). [📖 DevTools]
 
    CONTENTS
      1. Design tokens ........ fonts, colors, shadows reused everywhere
@@ -23,9 +61,21 @@
 /* ==========================================================================
    1. DESIGN TOKENS
    Change a value here and it updates everywhere it is used.
+
+   These are CSS variables [📖 CSS variable]. Names start with "--". They're
+   defined once, on :root (the whole page), and used elsewhere as
+   var(--ui-text). Like a C++ const that the whole file shares.
+
+   Colors appear as:
+     #1d1d1f                  hex [📖 Hex color]
+     rgba(255, 255, 255, 0.94) red, green, blue (0-255) + opacity (0-1)
+                              [📖 rgba]
    ========================================================================== */
 
 :root {
+    /* A list of fonts: the browser uses the first one the computer has.
+       -apple-system is the Mac/iPhone system font; sans-serif is the
+       last-resort fallback. */
     --ui-font:
         -apple-system,
         BlinkMacSystemFont,
@@ -37,6 +87,7 @@
         Arial,
         sans-serif;
 
+    /* White at 94% opacity: slightly see-through panels */
     --ui-background: rgba(255, 255, 255, 0.94);
     --ui-background-hover: rgba(246, 246, 248, 0.98);
 
@@ -44,8 +95,12 @@
     --ui-secondary-text: #6e6e73;
 
     --ui-border: rgba(0, 0, 0, 0.10);
+
+    /* How rounded the panel corners are */
     --ui-radius: 12px;
 
+    /* Two soft shadows layered together. Each is:
+       x-offset y-offset blur color */
     --ui-shadow:
         0 2px 8px rgba(0, 0, 0, 0.08),
         0 8px 28px rgba(0, 0, 0, 0.08);
@@ -54,8 +109,10 @@
 
 /* ==========================================================================
    2. PAGE LAYOUT
+   Make the map fill the entire browser window. [📖 Units]
    ========================================================================== */
 
+/* By default pages have a small white margin and can scroll. Remove both. */
 html,
 body {
     width: 100%;
@@ -65,6 +122,8 @@ body {
     overflow: hidden;
 }
 
+/* The map box from index.html. "position: fixed" pins it to the window
+   [📖 Position]; 100vw x 100vh = 100% of the window's width and height. */
 #map {
     position: fixed;
     top: 0;
@@ -86,6 +145,8 @@ input,
 
 /* ==========================================================================
    3. SHARED PANEL LOOK
+   One rule styles four different boxes the same way (the comma-separated
+   selector list), so they all match.
    ========================================================================== */
 
 .leaflet-control-layers,
@@ -97,6 +158,9 @@ input,
     border-radius: var(--ui-radius);
     box-shadow: var(--ui-shadow);
     color: var(--ui-text);
+
+    /* Blurs whatever map is behind the panel: the "frosted glass" look.
+       The -webkit- version is the same thing for Safari [📖 Vendor prefix]. */
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
 }
@@ -107,14 +171,19 @@ input,
    ========================================================================== */
 
 .leaflet-control-layers {
+    /* Never taller than 45% of the window; scroll inside if longer */
     max-height: 45vh;
     overflow-y: auto;
     overscroll-behavior: contain;
+
+    /* padding = space INSIDE the border (top/bottom 10px, left/right 12px)
+       [📖 Box model] */
     padding: 10px 12px;
     line-height: 1.4;
 }
 
 .leaflet-control-layers label {
+    /* margin = space OUTSIDE the border [📖 Box model] */
     margin: 2px 0;
     font-size: 13px;
     font-weight: 450;
@@ -128,6 +197,7 @@ input,
     background: var(--ui-border);
 }
 
+/* The checkbox tick color (Apple blue) */
 .leaflet-control-layers input {
     accent-color: #007aff;
 }
@@ -139,6 +209,8 @@ input,
     border-radius: 6px;
 }
 
+/* A faint gray highlight while the mouse is over a group row
+   [📖 Pseudo-class] */
 .leaflet-layerstree-header:hover {
     background: rgba(0, 0, 0, 0.035);
 }
@@ -157,6 +229,8 @@ input,
 /* The small box holding the word "Layers" or "Legend" and its switch */
 
 .control-toggle-switch {
+    /* Flexbox lines up the children in a row, vertically centered, with
+       8px between them [📖 Flexbox] */
     display: flex;
     align-items: center;
     gap: 8px;
@@ -165,6 +239,9 @@ input,
     font-size: 12px;
     font-weight: 600;
     letter-spacing: -0.01em;
+
+    /* Animate changes to these properties over 0.15 seconds instead of
+       jumping [📖 Transition] */
     transition:
         background 0.15s ease,
         box-shadow 0.15s ease,
@@ -175,7 +252,8 @@ input,
     background: var(--ui-background-hover);
 }
 
-/* JavaScript positions these two just above their panels */
+/* JavaScript positions these two just above their panels
+   (see positionPanelSwitches in js/controls.js) [📖 z-index] */
 
 .layer-toggle-fixed,
 .legend-toggle-fixed {
@@ -183,21 +261,27 @@ input,
     z-index: 1000;
 }
 
-/* The switch itself: a hidden checkbox drawn as a sliding pill */
+/* The switch itself: a hidden checkbox drawn as a sliding pill
+   A real checkbox is still there (so clicking works), but it's made
+   invisible, and two spans draw the pill and the white knob instead. */
 
 .toggle-switch {
+    /* "relative" so the absolutely-positioned pieces inside are placed
+       relative to THIS box [📖 Position] */
     position: relative;
     display: inline-block;
     width: 34px;
     height: 20px;
 }
 
+/* Hide the real checkbox */
 .toggle-switch input {
     opacity: 0;
     width: 0;
     height: 0;
 }
 
+/* The pill (gray when off) */
 .toggle-slider {
     position: absolute;
     cursor: pointer;
@@ -210,6 +294,8 @@ input,
     transition: background 0.2s ease;
 }
 
+/* The white knob, created out of nothing with ::before
+   [📖 Pseudo-element]. content: "" is required for it to appear. */
 .toggle-slider::before {
     content: "";
     position: absolute;
@@ -223,10 +309,13 @@ input,
     transition: transform 0.2s ease;
 }
 
+/* When the hidden checkbox is ticked (:checked), the pill right after it
+   ("+" means "the next sibling") turns green... */
 .toggle-switch input:checked+.toggle-slider {
     background: #34c759;
 }
 
+/* ...and the knob slides 14px to the right. */
 .toggle-switch input:checked+.toggle-slider::before {
     transform: translateX(14px);
 }
@@ -256,7 +345,9 @@ input,
     color: var(--ui-secondary-text);
 }
 
-/* Square symbol (census tract colors, parks) */
+/* Square symbol (census tract colors, parks)
+   legend.js makes empty <i> tags; this turns them into 18px squares.
+   float: left lets the text sit beside the square. */
 
 .info.legend i {
     width: 18px;
@@ -265,7 +356,8 @@ input,
     margin-right: 8px;
 }
 
-/* Circle symbol (score points) */
+/* Circle symbol (score points)
+   border-radius: 50% rounds a square into a circle. */
 
 .info.legend .circle-symbol {
     width: 12px;
@@ -274,7 +366,8 @@ input,
     margin: 3px 8px 0 3px;
 }
 
-/* Line symbol (boundaries) */
+/* Line symbol (boundaries)
+   A box with no height and only a top border, which looks like a line. */
 
 .info.legend .line-symbol {
     width: 20px;
@@ -293,6 +386,16 @@ input,
 
      --shape-path   comes from a .point-shape-* class below
      --marker-color comes from JavaScript (js/layers.js, js/legend.js)
+
+   The shapes are cut out with clip-path [📖 clip-path]: start with a square
+   and keep only the part inside a polygon. polygon(50% 0, 100% 50%, ...)
+   lists the corners as (x y) percentages of the square, so
+   "50% 0" = middle of the top edge.
+
+   WANT A NEW SHAPE? Copy one of the .point-shape-* rules at the bottom,
+   rename it (e.g. .point-shape-arrow), change the polygon points, and use
+   shape: "arrow" in config.js. Search "clip-path maker" online for a visual
+   tool that writes the polygon for you.
    ========================================================================== */
 
 /* Leaflet's wrapper around each map symbol */
@@ -325,7 +428,9 @@ input,
     clip-path: var(--shape-path);
 }
 
-/* Colored fill, shared by both versions */
+/* Colored fill, shared by both versions
+   ::after adds a second shape on top [📖 Pseudo-element];
+   inset: 1.5px makes it 1.5px smaller on every side, leaving a dark rim. */
 
 .point-marker-shape::after,
 .point-legend-symbol::after {
@@ -397,6 +502,7 @@ input,
    ========================================================================== */
 
 .area-label {
+    /* Remove the white box Leaflet normally draws around a tooltip */
     background: transparent;
     border: none;
     box-shadow: none;
@@ -404,6 +510,8 @@ input,
     white-space: normal;
     text-align: center;
     line-height: 1.05;
+
+    /* Clicks pass through the label to the map underneath */
     pointer-events: none;
 
     /* Slightly reinforce very small text */
@@ -414,7 +522,8 @@ input,
         opacity 0.15s ease;
 }
 
-/* Force ALL text inside area labels to stay bold */
+/* Force ALL text inside area labels to stay bold
+   (" *" means "every element inside") */
 
 .area-label,
 .area-label *,
@@ -439,7 +548,11 @@ input,
     background: #FFFFFF;
     border: 2px solid #000000;
     border-radius: 50%;
+
+    /* Count the border INSIDE the 18px, not added on top [📖 Box model] */
     box-sizing: border-box;
+
+    /* Center the number in the circle [📖 Flexbox] */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -482,6 +595,8 @@ input,
     display: block;
     width: 100%;
     text-align: center;
+
+    /* "inherit" = copy the value from the parent element */
     font: inherit;
     line-height: 1;
 
@@ -505,6 +620,9 @@ input,
     padding: 0 14px;
     border: 1px solid transparent;
     border-radius: var(--ui-radius);
+
+    /* Remove the browser's default blue outline; :focus below draws a
+       nicer one */
     outline: none;
     font-family: var(--ui-font) !important;
     font-size: 14px;
@@ -517,16 +635,21 @@ input,
         box-shadow 0.15s ease;
 }
 
+/* The grey hint text ("Search address...") [📖 Pseudo-element] */
 .address-search-input::placeholder {
     color: #86868b;
 }
 
+/* While the box is selected for typing [📖 Pseudo-class] */
 .address-search-input:focus {
     border-color: rgba(0, 122, 255, 0.55);
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 
-/* Dropdown list of suggestions */
+/* Dropdown list of suggestions
+   Hidden (display: none) until js/search.js shows it. "absolute" places it
+   just below the search box without pushing anything else down
+   [📖 Position]. calc() does math with units. */
 
 .address-search-results {
     display: none;
@@ -548,6 +671,8 @@ input,
 .address-search-result {
     padding: 10px 13px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+
+    /* Show the pointing-hand cursor: "this is clickable" */
     cursor: pointer;
     font-family: var(--ui-font) !important;
     font-size: 13px;
@@ -556,6 +681,7 @@ input,
     transition: background 0.12s ease;
 }
 
+/* No divider line under the last suggestion */
 .address-search-result:last-child {
     border-bottom: none;
 }
@@ -575,6 +701,7 @@ input,
 
 /* ==========================================================================
    11. ZOOM BUTTONS
+   Leaflet's + / - buttons, restyled to match our panels.
    ========================================================================== */
 
 .leaflet-bar {
@@ -610,6 +737,7 @@ input,
    12. POPUPS
    ========================================================================== */
 
+/* The popup's white card */
 .leaflet-popup-content-wrapper {
     border: 1px solid var(--ui-border);
     border-radius: 14px;
@@ -621,6 +749,7 @@ input,
     -webkit-backdrop-filter: blur(18px);
 }
 
+/* The text inside it */
 .leaflet-popup-content {
     margin: 14px 16px;
     font-size: 13px;
@@ -629,10 +758,12 @@ input,
     color: var(--ui-text);
 }
 
+/* The bold labels ("Address:", "Phone:") */
 .leaflet-popup-content strong {
     font-weight: 650;
 }
 
+/* Links */
 .leaflet-popup-content a {
     color: #007aff;
     text-decoration: none;
@@ -643,6 +774,7 @@ input,
     text-decoration: underline;
 }
 
+/* The little triangle pointing down at the feature */
 .leaflet-popup-tip {
     background: rgba(255, 255, 255, 0.97);
     box-shadow: none;
@@ -676,6 +808,8 @@ input,
 /* ==========================================================================
    13. SCROLLBARS
    Thin, subtle scrollbars inside the scrollable panels.
+   The first rule is the standard way (Firefox, Chrome); the ::-webkit-
+   rules do the same for Safari and older Chrome [📖 Vendor prefix].
    ========================================================================== */
 
 .leaflet-control-layers,
@@ -709,6 +843,8 @@ input,
 
 /* ==========================================================================
    14. ATTRIBUTION
+   The small credit line in the bottom-right corner ("Leaflet | ©
+   OpenStreetMap"). Map data licenses require it, so keep it visible.
    ========================================================================== */
 
 .leaflet-control-attribution {
@@ -726,6 +862,7 @@ input,
 /* ==========================================================================
    15. LOADING PROBLEMS
    Shown only when a data file could not be loaded.
+   (Created by showProblems in js/main.js.)
    ========================================================================== */
 
 .map-error {
