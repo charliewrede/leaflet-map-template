@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "properties": { "name": "Union Station", "category": "Transit", "visitors": 1200000 }, "geometry": { "type": "Point", "coordinates": [-105.0002, 39.7527] } },
+    { "type": "Feature", "properties": { "name": "State Capitol", "category": "Government", "visitors": 300000 }, "geometry": { "type": "Point", "coordinates": [-104.9848, 39.7393] } },
+    { "type": "Feature", "properties": { "name": "City Park", "category": "Park", "visitors": 2500000 }, "geometry": { "type": "Point", "coordinates": [-104.9508, 39.7475] } }
+  ]
+}

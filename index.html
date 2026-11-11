@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<!--
+    LEAFLET MAP TEMPLATE
+
+    This page is only the frame. The map itself is built by the files below:
+
+        css/styles.css ..... how everything looks
+        js/config.js ....... what is on the map: layers, colors, popups, legend
+        js/main.js ......... the starting point; builds the map step by step
+        js/layers.js ....... loads the data and draws the layers
+        js/popups.js ....... builds popup text
+        js/labels.js ....... places the area name labels
+        js/controls.js ..... layer checkbox list and show / hide switches
+        js/legend.js ....... the legend
+        js/search.js ....... the address search box
+        Data/ .............. the GeoJSON files
+
+    TO ADD DATA: put a .geojson file in Data/ and add
+        { file: "YourFile.geojson" },
+    to LAYERS in js/config.js. See README.md.
+
+    To change WHAT the map shows, edit js/config.js.
+    To change HOW it looks, edit css/styles.css.
+
+    The page must be opened through a web server (for example the VS Code
+    "Live Server" extension or GitHub Pages), not by double-clicking the file.
+-->
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Map</title>
+
+    <!-- Leaflet (the map library) and the tree-style layer control -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.control.layers.tree@1.2.0/L.Control.Layers.Tree.css" />
+
+    <!-- This map's own styles -->
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+    <!-- Leaflet draws the map inside this element -->
+    <div id="map"></div>
+
+    <!-- Leaflet (the map library) and the tree-style layer control -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.control.layers.tree@1.2.0/L.Control.Layers.Tree.js"></script>
+
+    <!-- This map's own code. main.js loads the other js files itself. -->
+    <script type="module" src="js/main.js"></script>
+
+</body>
+
+</html>

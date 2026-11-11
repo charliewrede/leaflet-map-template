@@ -1,0 +1,9 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "properties": { "name": "Downtown Example", "note": "Rough outline, for testing only" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-105.010, 39.733], [-104.978, 39.733], [-104.978, 39.758], [-105.010, 39.758], [-105.010, 39.733]]] } },
+    { "type": "Feature", "properties": { "name": "East Side Example", "note": "Rough outline, for testing only" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-104.975, 39.733], [-104.938, 39.733], [-104.938, 39.758], [-104.975, 39.758], [-104.975, 39.733]]] } }
+  ]
+}
